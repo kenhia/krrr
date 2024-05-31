@@ -1,7 +1,4 @@
 #![warn(clippy::pedantic)]
-
-use serde::Deserialize;
-use std::net::SocketAddr;
 /// launch VS code remotely *from the remote machine*.
 ///
 /// I'm often ssh'd into a remote machine and want to open a folder in VS code.
@@ -15,6 +12,9 @@ use std::net::SocketAddr;
 /// So, this solves the *Host* side of the problem. From the *Remote* machine
 /// I can use curl or write a script to collect the information from my current
 /// directory and send it to the host machine.
+use colored::Colorize;
+use serde::Deserialize;
+use std::net::SocketAddr;
 use std::process::Command;
 use warp::http::Response;
 use warp::Filter;
@@ -93,8 +93,22 @@ async fn main() {
                 ))
                 .output();
             let rc = match result {
-                Ok(_) => "success".to_string(),
-                Err(e) => format!("failed to execute process: {e}"),
+                Ok(_) => {
+                    println!(
+                        "[RRCode]\n\thost: {}\n\tpath: {}",
+                        p.client.blue(),
+                        p.path.blue()
+                    );
+                    "success".to_string()
+                }
+                Err(e) => {
+                    let msg = format!(
+                        "[RRCode]\n\tfailed to execute process: {}",
+                        e.to_string().red()
+                    );
+                    println!("{msg}");
+                    msg
+                }
             };
             Response::builder().body(format!(
                 "client = {}, user = {}, path = {} : {rc}",
